@@ -6,7 +6,7 @@ client = MongoClient("mongodb://localhost:27017/")  # Replace with your MongoDB 
 db = client["Courses"]
 collection = db["Courses"]
 
-# Function to Create a Course (Available to both Admin & General Users)
+# Function to Create a Course
 def create_course():
     title = input("Enter course title: ")
     description = input("Enter course description: ")
@@ -39,7 +39,6 @@ def get_course(is_admin):
             if is_admin:
                 print(course)  # Admin sees everything
             else:
-                # General users see only these fields
                 print(f"Title: {course['title']}")
                 print(f"Description: {course['description']}")
                 print(f"Instructor: {course['instructor']}")
@@ -49,7 +48,7 @@ def get_course(is_admin):
     except Exception as e:
         print(f"Error: {e}")
 
-# Function to Update a Course (Available to both Admin & General Users)
+# Function to Update a Course
 def update_course():
     course_title = input("Enter course title to update: ")
     try:
@@ -99,7 +98,10 @@ def list_courses(is_admin):
 def main():
     print("Welcome to the Course Management System!")
     
+    # Ask for user type
     user_type = input("Are you an Admin or General User? (admin/user): ").strip().lower()
+    name = input("Enter your name: ").strip()  # Ask for user's name
+
     is_admin = user_type == "admin"
 
     if is_admin:
@@ -107,6 +109,9 @@ def main():
         if password != "admin123":  # Set your own admin password
             print("Incorrect password! Exiting...")
             return
+
+    print(f"\nHello {name}! 👋")
+    print("Welcome to the Course Management Menu.")
 
     while True:
         print("\nCourse Management Menu:")
@@ -121,7 +126,7 @@ def main():
         else:
             print("5. Exit")
 
-        choice = input("Enter your choice: ")
+        choice = input(f"{name}, enter your choice: ")
 
         if choice == "1":
             create_course()
@@ -134,7 +139,7 @@ def main():
         elif choice == "5" and is_admin:
             delete_course()
         elif choice == "5" and not is_admin or choice == "6":
-            print("Exiting...")
+            print(f"Goodbye, {name}! Have a great day! 😊")
             break
         else:
             print("Invalid choice, please try again.")
