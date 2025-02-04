@@ -1,13 +1,8 @@
-from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.json_util import dumps
-
 import sys
-from pymongo import MongoClient
-from bson.objectid import ObjectId
 from flask import Flask, request, jsonify
-from bson.json_util import dumps
 
 # Connect to MongoDB
 client = MongoClient("mongodb+srv://apatel2:AYUSH@cluster0.2oeoz.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true")
