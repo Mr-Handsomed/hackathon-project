@@ -1,8 +1,9 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
-# Step 1: Connect to MongoDB
-client = MongoClient("mongodb://localhost:27017/")  # Replace with your MongoDB URI if needed
+# Connect to MongoDB
+client = MongoClient("mongodb+srv://apatel2:AYUSH@cluster0.2oeoz.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true")
+
 db = client["Courses"]
 collection = db["Courses"]
 
@@ -11,7 +12,7 @@ def create_course():
     title = input("Enter course title: ")
     description = input("Enter course description: ")
     instructor = input("Enter instructor name: ")
-    duration = int(input("Enter course duration (in days): "))
+    duration = input("Enter course duration (e.g., '30 days', '4 weeks'): ")  # Store as string
 
     course = {
         "title": title,
@@ -20,15 +21,13 @@ def create_course():
         "duration": duration
     }
     result = collection.insert_one(course)
-    print(f"Course created successfully.")
-    return result.inserted_id
+    print("Course created successfully.")
 
-# Function to Retrieve a Course (Admin sees IDs, General User does not)
+# Function to Retrieve a Course
 def get_course(is_admin):
-    course_id = input("Enter course ID to retrieve: ") if is_admin else None
-    
     try:
         if is_admin:
+            course_id = input("Enter course ID to retrieve: ")
             course = collection.find_one({"_id": ObjectId(course_id)})
         else:
             course_title = input("Enter course title to search: ")
@@ -37,113 +36,90 @@ def get_course(is_admin):
         if course:
             print("\nCourse Details:")
             if is_admin:
-                print(course)  # Admin sees everything
+                print(course)
             else:
                 print(f"Title: {course['title']}")
                 print(f"Description: {course['description']}")
                 print(f"Instructor: {course['instructor']}")
-                print(f"Duration: {course['duration']} days")
+                print(f"Duration: {course['duration']}")
         else:
             print("Course not found.")
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception:
+        print("Invalid ID format or course not found.")
 
 # Function to Update a Course
 def update_course():
     course_title = input("Enter course title to update: ")
-    try:
-        field = input("Enter field to update (description, instructor, duration): ").strip()
-        if field not in ["description", "instructor", "duration"]:
-            print("Invalid field. You can update only 'description', 'instructor', or 'duration'.")
-            return
+    valid_fields = ["description", "instructor", "duration"]
+    field = input("Enter field to update (description, instructor, duration): ").strip()
 
-        new_value = input(f"Enter new value for {field}: ")
-        if field == "duration":
-            new_value = int(new_value)
+    if field not in valid_fields:
+        print("Invalid field. Please choose from 'description', 'instructor', or 'duration'.")
+        return
 
-        result = collection.update_one(
-            {"title": course_title},
-            {"$set": {field: new_value}}
-        )
-        if result.modified_count > 0:
-            print("Course updated successfully.")
-        else:
-            print("No changes made or course not found.")
-    except Exception as e:
-        print(f"Error: {e}")
+    new_value = input(f"Enter new value for {field}: ")
 
-# Function to Delete a Course (Admin Only)
+    result = collection.update_one(
+        {"title": course_title},
+        {"$set": {field: new_value}}
+    )
+    print("Course updated successfully." if result.modified_count > 0 else "No changes made or course not found.")
+
+# Function to Delete a Course
 def delete_course():
-    course_id = input("Enter course ID to delete: ")
     try:
+        course_id = input("Enter course ID to delete: ")
         result = collection.delete_one({"_id": ObjectId(course_id)})
-        if result.deleted_count > 0:
-            print("Course deleted successfully.")
-        else:
-            print("Course not found.")
-    except Exception as e:
-        print(f"Error: {e}")
+        print("Course deleted successfully." if result.deleted_count > 0 else "Course not found.")
+    except Exception:
+        print("Invalid course ID format.")
 
-# Function to List All Courses (General Users don't see IDs)
+# Function to List All Courses
 def list_courses(is_admin):
     courses = collection.find()
+    found_any = False
     print("\nAll Courses:")
+    
     for course in courses:
+        found_any = True
         if is_admin:
-            print(course)  # Admin sees all details including ID
+            print(course)
         else:
-            print(f"- {course['title']} (Instructor: {course['instructor']}, Duration: {course['duration']} days)")
+            print(f"- {course['title']} (Instructor: {course['instructor']}, Duration: {course['duration']})")
 
-# User Authentication System
+    if not found_any:
+        print("No courses available.")
+
+# Main Function
 def main():
     print("Welcome to the Course Management System!")
-    
-    # Ask for user type
     user_type = input("Are you an Admin or General User? (admin/user): ").strip().lower()
-    name = input("Enter your name: ").strip()  # Ask for user's name
+    name = input("Enter your name: ").strip()
 
     is_admin = user_type == "admin"
-
     if is_admin:
         password = input("Enter Admin Password: ")
-        if password != "admin123":  # Set your own admin password
+        if password != "admin123":
             print("Incorrect password! Exiting...")
             return
 
     print(f"\nHello {name}! 👋")
-    print("Welcome to the Course Management Menu.")
-
     while True:
-        print("\nCourse Management Menu:")
-        print("1. Create a new course")
-        print("2. Retrieve a course")
-        print("3. Update a course")
-        print("4. List all courses")
-        
+        print("\n1. Create Course\n2. Retrieve Course\n3. Update Course\n4. List Courses")
         if is_admin:
-            print("5. Delete a course")
-            print("6. Exit")
+            print("5. Delete Course\n6. Exit")
         else:
             print("5. Exit")
 
         choice = input(f"{name}, enter your choice: ")
 
-        if choice == "1":
-            create_course()
-        elif choice == "2":
-            get_course(is_admin)
-        elif choice == "3":
-            update_course()
-        elif choice == "4":
-            list_courses(is_admin)
-        elif choice == "5" and is_admin:
-            delete_course()
-        elif choice == "5" and not is_admin or choice == "6":
-            print(f"Goodbye, {name}! Have a great day! 😊")
-            break
-        else:
-            print("Invalid choice, please try again.")
+        if choice == "1": create_course()
+        elif choice == "2": get_course(is_admin)
+        elif choice == "3": update_course()
+        elif choice == "4": list_courses(is_admin)
+        elif choice == "5" and is_admin: delete_course()
+        elif choice in ["5", "6"]: print(f"Goodbye, {name}!"); break
+        else: print("Invalid choice, try again.")
 
-# Run the program
 if __name__ == "__main__":
     main()
