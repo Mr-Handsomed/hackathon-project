@@ -2,11 +2,11 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 
 # Step 1: Connect to MongoDB
-client = MongoClient("mongodb://localhost:27017/")  # Replace with your MongoDB URI if remote
+client = MongoClient("mongodb://localhost:27017/")  # Replace with your MongoDB URI if needed
 db = client["Courses"]
 collection = db["Courses"]
 
-# Step 2: Insert a Document
+# Function to Create a Course (Available to both Admin & General Users)
 def create_course():
     title = input("Enter course title: ")
     description = input("Enter course description: ")
@@ -20,34 +20,50 @@ def create_course():
         "duration": duration
     }
     result = collection.insert_one(course)
-    print(f"Course created with ID: {result.inserted_id}")
+    print(f"Course created successfully.")
     return result.inserted_id
 
-# Step 3: Retrieve a Document
-def get_course():
-    course_id = input("Enter course ID to retrieve: ")
+# Function to Retrieve a Course (Admin sees IDs, General User does not)
+def get_course(is_admin):
+    course_id = input("Enter course ID to retrieve: ") if is_admin else None
+    
     try:
-        course = collection.find_one({"_id": ObjectId(course_id)})
+        if is_admin:
+            course = collection.find_one({"_id": ObjectId(course_id)})
+        else:
+            course_title = input("Enter course title to search: ")
+            course = collection.find_one({"title": course_title})
+
         if course:
-            print("Course found:", course)
+            print("\nCourse Details:")
+            if is_admin:
+                print(course)  # Admin sees everything
+            else:
+                # General users see only these fields
+                print(f"Title: {course['title']}")
+                print(f"Description: {course['description']}")
+                print(f"Instructor: {course['instructor']}")
+                print(f"Duration: {course['duration']} days")
         else:
             print("Course not found.")
     except Exception as e:
         print(f"Error: {e}")
 
-# Step 4: Update a Document
+# Function to Update a Course (Available to both Admin & General Users)
 def update_course():
-    course_id = input("Enter course ID to update: ")
+    course_title = input("Enter course title to update: ")
     try:
-        field = input("Enter field to update (title, description, instructor, duration): ").strip()
-        new_value = input(f"Enter new value for {field}: ")
+        field = input("Enter field to update (description, instructor, duration): ").strip()
+        if field not in ["description", "instructor", "duration"]:
+            print("Invalid field. You can update only 'description', 'instructor', or 'duration'.")
+            return
 
-        # Convert duration to int if updating duration
+        new_value = input(f"Enter new value for {field}: ")
         if field == "duration":
             new_value = int(new_value)
 
         result = collection.update_one(
-            {"_id": ObjectId(course_id)},
+            {"title": course_title},
             {"$set": {field: new_value}}
         )
         if result.modified_count > 0:
@@ -57,7 +73,7 @@ def update_course():
     except Exception as e:
         print(f"Error: {e}")
 
-# Step 5: Delete a Document
+# Function to Delete a Course (Admin Only)
 def delete_course():
     course_id = input("Enter course ID to delete: ")
     try:
@@ -69,37 +85,60 @@ def delete_course():
     except Exception as e:
         print(f"Error: {e}")
 
-# Step 6: List All Documents
-def list_courses():
+# Function to List All Courses (General Users don't see IDs)
+def list_courses(is_admin):
     courses = collection.find()
+    print("\nAll Courses:")
     for course in courses:
-        print(course)
+        if is_admin:
+            print(course)  # Admin sees all details including ID
+        else:
+            print(f"- {course['title']} (Instructor: {course['instructor']}, Duration: {course['duration']} days)")
 
-# User Menu
-if __name__ == "__main__":
+# User Authentication System
+def main():
+    print("Welcome to the Course Management System!")
+    
+    user_type = input("Are you an Admin or General User? (admin/user): ").strip().lower()
+    is_admin = user_type == "admin"
+
+    if is_admin:
+        password = input("Enter Admin Password: ")
+        if password != "admin123":  # Set your own admin password
+            print("Incorrect password! Exiting...")
+            return
+
     while True:
-        print("\nCourse Management System")
+        print("\nCourse Management Menu:")
         print("1. Create a new course")
         print("2. Retrieve a course")
         print("3. Update a course")
-        print("4. Delete a course")
-        print("5. List all courses")
-        print("6. Exit")
+        print("4. List all courses")
+        
+        if is_admin:
+            print("5. Delete a course")
+            print("6. Exit")
+        else:
+            print("5. Exit")
 
         choice = input("Enter your choice: ")
 
         if choice == "1":
             create_course()
         elif choice == "2":
-            get_course()
+            get_course(is_admin)
         elif choice == "3":
             update_course()
         elif choice == "4":
+            list_courses(is_admin)
+        elif choice == "5" and is_admin:
             delete_course()
-        elif choice == "5":
-            list_courses()
-        elif choice == "6":
+        elif choice == "5" and not is_admin or choice == "6":
             print("Exiting...")
             break
         else:
             print("Invalid choice, please try again.")
+
+# Run the program
+if __name__ == "__main__":
+    main()
