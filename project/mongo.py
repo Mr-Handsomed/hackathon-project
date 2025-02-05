@@ -5,7 +5,7 @@ import sys
 from flask import Flask, request, jsonify
 
 # Connect to MongoDB
-client = MongoClient("mongodb+srv://apatel2:AYUSH@cluster0.2oeoz.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true")
+client = MongoClient("mongodb+srv://varenyavadrevu112:varenya112@cluster0.rci5v.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client["Courses"]
 collection = db["Courses"]
 
